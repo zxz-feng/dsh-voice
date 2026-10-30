@@ -46,6 +46,11 @@ window.__ModuleLoader__.load({
 [data-voice-msg][data-kind="ok"] { color:#4cc38a; }
 [data-voice-stat] { display:flex; gap:16px; font-size:12px; opacity:.7; flex-wrap:wrap; }
 [data-voice-audio] { width:100%; margin-top:8px; }
+[data-voice-field] { display:flex; align-items:center; gap:10px; margin:6px 0; }
+[data-voice-field] label { min-width:104px; font-size:13px; opacity:.8; }
+[data-voice-hint] { font-size:12px; opacity:.55; margin:2px 0 8px; }
+[data-voice-tag] { font-size:11px; padding:1px 7px; border-radius:999px; background:rgba(76,141,255,.16);
+  border:1px solid rgba(76,141,255,.4); margin-left:6px; }
 `
     if (!document.querySelector('style[data-voice-css]')) {
       const el = document.createElement('style')
@@ -59,6 +64,15 @@ window.__ModuleLoader__.load({
       const [preset, setPreset] = useState('')
       const [maxChars, setMaxChars] = useState('')
       const [text, setText] = useState('哼，你才想起来找我啊。行吧，今天心情好，不跟你计较。')
+      const [engine, setEngine] = useState('edge')
+      const [gsvUrl, setGsvUrl] = useState('')
+      const [gsvRef, setGsvRef] = useState('')
+      const [gsvPrompt, setGsvPrompt] = useState('')
+      const [rvcUrl, setRvcUrl] = useState('')
+      const [rvcModel, setRvcModel] = useState('')
+      const [rvcPitch, setRvcPitch] = useState('0')
+      const [rvcIndex, setRvcIndex] = useState('0.5')
+      const [probe, setProbe] = useState('')
       const [url, setUrl] = useState('')
       const [busy, setBusy] = useState(false)
       const [msg, setMsg] = useState({ kind: '', text: '' })
@@ -67,6 +81,10 @@ window.__ModuleLoader__.load({
         try {
           const s = await jget('/status')
           setSt(s); setPreset(s.preset); setMaxChars(String(s.maxChars))
+          setEngine(s.engine || 'edge')
+          setGsvUrl(s.gptsovits?.url || ''); setGsvRef(s.gptsovits?.ref || ''); setGsvPrompt(s.gptsovits?.prompt || '')
+          setRvcUrl(s.rvc?.url || ''); setRvcModel(s.rvc?.model || '')
+          setRvcPitch(String(s.rvc?.pitch ?? 0)); setRvcIndex(String(s.rvc?.indexRate ?? 0.5))
         } catch (e) { setMsg({ kind: 'err', text: '读取失败：' + e.message }) }
       }, [])
       useEffect(() => { load() }, [load])
@@ -74,7 +92,11 @@ window.__ModuleLoader__.load({
       const save = async () => {
         setBusy(true); setMsg({ kind: '', text: '' })
         try {
-          const s = await jpost('/config', { preset, maxChars: Number(maxChars) })
+          const s = await jpost('/config', {
+            preset, maxChars: Number(maxChars), engine,
+            gptsovitsUrl: gsvUrl, gptsovitsRef: gsvRef, gptsovitsPrompt: gsvPrompt,
+            rvcUrl, rvcModel, rvcPitch: Number(rvcPitch), rvcIndexRate: Number(rvcIndex),
+          })
           setSt(s); setMsg({ kind: 'ok', text: '已保存 —— 下一句群消息就按新档走' })
         } catch (e) { setMsg({ kind: 'err', text: '保存失败：' + e.message }) }
         setBusy(false)
@@ -82,7 +104,7 @@ window.__ModuleLoader__.load({
       const test = async () => {
         setBusy(true); setMsg({ kind: '', text: '' })
         try {
-          const r = await jpost('/test', { text, preset })
+          const r = await jpost('/test', { text, preset, engine })
           if (r.ok) { setUrl(r.url + '?t=' + Date.now()); setMsg({ kind: 'ok', text: `合成好了（${r.ms}ms${r.cached ? '，命中缓存' : ''}）` }) }
           else setMsg({ kind: 'err', text: r.error || '合成失败' })
         } catch (e) { setMsg({ kind: 'err', text: '合成失败：' + e.message }) }
@@ -97,7 +119,8 @@ window.__ModuleLoader__.load({
             h('span', {}, '音色：' + st.voice),
             h('span', {}, '缓存：' + (st.cache?.files ?? 0) + ' 条 / ' + Math.round((st.cache?.bytes ?? 0) / 1048576) + 'MB'),
             h('span', {}, '翻唱库：' + st.covers + ' 首'),
-            h('span', {}, '状态：' + (st.enabled ? '开' : '关'))),
+            h('span', {}, '状态：' + (st.enabled ? '开' : '关')),
+          h('span', {}, '引擎：' + (st.engine || 'edge'))),
           h('div', { 'data-voice-row': '' },
             h('label', {}, '语气档'),
             h('div', { 'data-voice-presets': '' }, (st.presets || []).map((p) => h('button', {
@@ -105,12 +128,49 @@ window.__ModuleLoader__.load({
               onClick: () => setPreset(p.key), title: `语速 ${p.rate} / 音高 ${p.pitch}`,
             }, p.label)))),
           h('div', { 'data-voice-row': '' },
+            h('label', {}, '引擎'),
+            h('div', { 'data-voice-presets': '' },
+              [['edge', 'Edge TTS'], ['gptsovits', 'GPT-SoVITS'], ['edge+rvc', 'Edge + RVC']].map(([k, label]) =>
+                h('button', {
+                  key: k, 'data-voice-pill': '', 'data-on': engine === k ? '1' : '0',
+                  onClick: () => setEngine(k),
+                }, label)))),
+          h('div', { 'data-voice-row': '' },
             h('label', {}, '最长字数'),
             h('input', {
               'data-voice-input': '', type: 'number', min: 20, max: 300, value: maxChars,
               onChange: (e) => setMaxChars(e.target.value),
             }),
             h('button', { 'data-voice-btn': '', 'data-primary': '1', disabled: busy, onClick: save }, '保存'))),
+
+        engine === 'gptsovits' ? h('div', { 'data-voice-card': '' },
+          h('h4', {}, 'GPT-SoVITS（本地一步到位）'),
+          h('div', { 'data-voice-hint': '' }, '远端挂了自己回落 Edge，不会哑。参考音频填**对方机器上**的路径。'),
+          h('div', { 'data-voice-field': '' }, h('label', {}, '服务地址'), h('input', {
+            'data-voice-input': '', value: gsvUrl, placeholder: 'http://100.x.x.x:9880',
+            onChange: (e) => setGsvUrl(e.target.value) })),
+          h('div', { 'data-voice-field': '' }, h('label', {}, '参考音频'), h('input', {
+            'data-voice-input': '', value: gsvRef, placeholder: 'D:/models/ref/anjie_ref_a.wav',
+            onChange: (e) => setGsvRef(e.target.value) })),
+          h('div', { 'data-voice-field': '' }, h('label', {}, '参考原文'), h('input', {
+            'data-voice-input': '', value: gsvPrompt, placeholder: '那段音频说了什么',
+            onChange: (e) => setGsvPrompt(e.target.value) }))) : null,
+
+        engine === 'edge+rvc' ? h('div', { 'data-voice-card': '' },
+          h('h4', {}, 'Edge + RVC（两步，好训）'),
+          h('div', { 'data-voice-hint': '' }, '文字先用 Edge 合成，再送本地 RVC 换音色。RVC 挂了自动回落纯 Edge。'),
+          h('div', { 'data-voice-field': '' }, h('label', {}, 'RVC 地址'), h('input', {
+            'data-voice-input': '', value: rvcUrl, placeholder: 'http://100.x.x.x:5050',
+            onChange: (e) => setRvcUrl(e.target.value) })),
+          h('div', { 'data-voice-field': '' }, h('label', {}, '模型名'), h('input', {
+            'data-voice-input': '', value: rvcModel, placeholder: 'anjie.pth',
+            onChange: (e) => setRvcModel(e.target.value) })),
+          h('div', { 'data-voice-field': '' }, h('label', {}, '升调（半音）'), h('input', {
+            'data-voice-input': '', type: 'number', min: -24, max: 24, value: rvcPitch,
+            onChange: (e) => setRvcPitch(e.target.value) })),
+          h('div', { 'data-voice-field': '' }, h('label', {}, '检索强度'), h('input', {
+            'data-voice-input': '', type: 'number', min: 0, max: 1, step: 0.05, value: rvcIndex,
+            onChange: (e) => setRvcIndex(e.target.value) }))) : null,
 
         h('div', { 'data-voice-card': '' },
           h('h4', {}, '试听'),

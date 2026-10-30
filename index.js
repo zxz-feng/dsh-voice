@@ -48,7 +48,7 @@ export function apply(ctx, config = {}) {
       enabled: c.enabled !== false,
       preset: PRESETS[c.preset] ? c.preset : DEFAULT_PRESET,
       maxChars: Math.min(300, Math.max(20, Number(c.maxChars) || MAX_CHARS)),
-      home: String(c.home || '').trim(),
+      home: typeof c.home === 'string' ? c.home.trim() : '',
     }
   }
 

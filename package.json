@@ -11,7 +11,7 @@
     "cordis.patch.yml"
   ],
   "scripts": {
-    "test": "node test/tts.mjs && node test/api.mjs"
+    "test": "node test/tts.mjs && node test/api.mjs && node test/gptsovits.mjs && node test/rvc.mjs"
   },
   "dependencies": {
     "msedge-tts": "^2.1.1",
