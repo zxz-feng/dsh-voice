@@ -71,6 +71,7 @@ export function apply(ctx, config = {}) {
   // ── 服务：别的插件（QQ/TG 桥）用这一行拿到嗓子 ───────────────────────────
   ctx.provide('voice', {
     speak: (text, opts) => api.synth(text, opts),
+    sing: (opts) => api.sing(opts),
     cover: (name) => api.cover(name),
     status: () => api.status(),
     voice: VOICE,
