@@ -1,0 +1,39 @@
+{
+  "name": "dsh-voice",
+  "version": "0.1.0",
+  "description": "小鲸鱼的嗓子：Edge TTS 合成 + 语气档 + 缓存 + 翻唱库，供 QQ/TG 桥调用",
+  "type": "module",
+  "main": "index.js",
+  "files": [
+    "index.js",
+    "client.js",
+    "lib",
+    "cordis.patch.yml"
+  ],
+  "scripts": {
+    "test": "node test/tts.mjs && node test/api.mjs"
+  },
+  "dependencies": {
+    "msedge-tts": "^2.1.1",
+    "schemastery": "^3.17.2"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-runtime",
+        "@deepseek-ai/dsh-client-ui-settings",
+        "@deepseek-ai/dsh-client-ui-settings-plugins"
+      ]
+    }
+  },
+  "license": "MIT",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./package.json": "./package.json"
+  }
+}

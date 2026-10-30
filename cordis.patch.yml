@@ -1,0 +1,4 @@
+# dsh-voice：把自己插进插件树（id 固定，别改，改了设置页会认不出）
+- insert:
+    - id: voice
+      name: dsh-voice
