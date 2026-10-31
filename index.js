@@ -96,7 +96,9 @@ export function apply(ctx, config = {}) {
     async execute({ text, preset }) {
       const r = await api.synth(text, { preset })
       if (!r) return '合成失败（接口不通或超时），改发文字吧'
-      return `已合成：${r.path}（${r.ms}ms${r.cached ? '，命中缓存' : ''}，${r.text.length} 字）`
+      // gptsovits/rvc 引擎不返回 text，只有 edge 会带 → 之前这里 .length 直接炸（2026-10-31）
+      const _t = String(r.text ?? text ?? '')
+      return `已合成：${r.path}（${r.ms}ms${r.cached ? '，命中缓存' : ''}，${_t.length} 字）`
     },
   })
 
