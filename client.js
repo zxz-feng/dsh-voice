@@ -163,13 +163,18 @@ window.__ModuleLoader__.load({
             'data-voice-input': '', value: gsvPrompt, placeholder: '那段音频说了什么',
             onChange: (e) => setGsvPrompt(e.target.value) }))) : null,
 
-        engine === 'edge+rvc' ? h('div', { 'data-voice-card': '' },
-          h('h4', {}, 'Edge + RVC（两步，好训）'),
-          h('div', { 'data-voice-hint': '' }, '文字先用 Edge 合成，再送本地 RVC 换音色。RVC 挂了自动回落纯 Edge。'),
-          h('div', { 'data-voice-field': '' }, h('label', {}, 'RVC 地址'), h('input', {
+        // 嗓子卡：**唱歌**用的那块。
+        // 原来只在「Edge + RVC」引擎下才显示，主人用 GPT-SoVITS 说话时整块消失，
+        // 连模型名都摸不到（2026-11-07 截图：「DSH 设置页没有啊」）。
+        // 说话（GPT-SoVITS）和唱歌（/sing + RVC）是两条独立链路，这块跟引擎无关，常显。
+        h('div', { 'data-voice-card': '' },
+          h('h4', {}, '唱歌的嗓子'),
+          h('div', { 'data-voice-hint': '' },
+            '唱歌走本地 /sing（分离 + RVC 换声 + 混音）。换这里只影响唱歌，说话走上面的 GPT-SoVITS。'),
+          h('div', { 'data-voice-field': '' }, h('label', {}, '换声地址'), h('input', {
             'data-voice-input': '', value: rvcUrl, placeholder: 'http://100.x.x.x:5050',
             onChange: (e) => setRvcUrl(e.target.value) })),
-          h('div', { 'data-voice-field': '' }, h('label', {}, '模型名'),
+          h('div', { 'data-voice-field': '' }, h('label', {}, '嗓子'),
             models.length ? h('select', {
               'data-voice-input': '', value: rvcModel,
               onChange: (e) => setRvcModel(e.target.value),
@@ -182,7 +187,7 @@ window.__ModuleLoader__.load({
             onChange: (e) => setRvcPitch(e.target.value) })),
           h('div', { 'data-voice-field': '' }, h('label', {}, '检索强度'), h('input', {
             'data-voice-input': '', type: 'number', min: 0, max: 1, step: 0.05, value: rvcIndex,
-            onChange: (e) => setRvcIndex(e.target.value) }))) : null,
+            onChange: (e) => setRvcIndex(e.target.value) }))),
 
         h('div', { 'data-voice-card': '' },
           h('h4', {}, '试听'),
