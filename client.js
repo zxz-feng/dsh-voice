@@ -70,6 +70,8 @@ window.__ModuleLoader__.load({
       const [gsvPrompt, setGsvPrompt] = useState('')
       const [rvcUrl, setRvcUrl] = useState('')
       const [rvcModel, setRvcModel] = useState('')
+      // 本地 /sing 那头有哪些嗓子：下拉框的选项，不让人手打模型名
+      const [models, setModels] = useState([])
       const [rvcPitch, setRvcPitch] = useState('0')
       const [rvcIndex, setRvcIndex] = useState('0.5')
       const [probe, setProbe] = useState('')
@@ -85,6 +87,11 @@ window.__ModuleLoader__.load({
           setGsvUrl(s.gptsovits?.url || ''); setGsvRef(s.gptsovits?.ref || ''); setGsvPrompt(s.gptsovits?.prompt || '')
           setRvcUrl(s.rvc?.url || ''); setRvcModel(s.rvc?.model || '')
           setRvcPitch(String(s.rvc?.pitch ?? 0)); setRvcIndex(String(s.rvc?.indexRate ?? 0.5))
+          // 顺手问一下本地有哪些嗓子。服务没开就留空，输入框会退回手填。
+          try {
+            const j = await jget('/models?url=' + encodeURIComponent(s.rvc?.url || s.sing?.url || ''))
+            setModels(Array.isArray(j.models) ? j.models : [])
+          } catch { setModels([]) }
         } catch (e) { setMsg({ kind: 'err', text: '读取失败：' + e.message }) }
       }, [])
       useEffect(() => { load() }, [load])
@@ -162,9 +169,14 @@ window.__ModuleLoader__.load({
           h('div', { 'data-voice-field': '' }, h('label', {}, 'RVC 地址'), h('input', {
             'data-voice-input': '', value: rvcUrl, placeholder: 'http://100.x.x.x:5050',
             onChange: (e) => setRvcUrl(e.target.value) })),
-          h('div', { 'data-voice-field': '' }, h('label', {}, '模型名'), h('input', {
-            'data-voice-input': '', value: rvcModel, placeholder: 'anjie.pth',
-            onChange: (e) => setRvcModel(e.target.value) })),
+          h('div', { 'data-voice-field': '' }, h('label', {}, '模型名'),
+            models.length ? h('select', {
+              'data-voice-input': '', value: rvcModel,
+              onChange: (e) => setRvcModel(e.target.value),
+            }, models.map((m) => h('option', { key: m, value: m }, m))) : h('input', {
+              'data-voice-input': '', value: rvcModel, placeholder: '服务没开，先手填模型名',
+              onChange: (e) => setRvcModel(e.target.value),
+            })),
           h('div', { 'data-voice-field': '' }, h('label', {}, '升调（半音）'), h('input', {
             'data-voice-input': '', type: 'number', min: -24, max: 24, value: rvcPitch,
             onChange: (e) => setRvcPitch(e.target.value) })),

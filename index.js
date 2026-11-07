@@ -136,6 +136,15 @@ export function apply(ctx, config = {}) {
     try {
       if (req.method === 'GET' && p === '/status') return sendJson(res, 200, api.status())
 
+      // 本地 /sing 有哪些模型：设置页的「模型名」下拉框靠它填充。
+      // 名字来自服务端 rvc_models/ 的一级目录，所以新丢一个模型进去，
+      // 刷新设置页就能看见，不用改代码。
+      if (req.method === 'GET' && p === '/models') {
+        const q = url.searchParams.get('url') || api.effective().singUrl || ''
+        const models = await api.singModels(String(q))
+        return sendJson(res, 200, { ok: true, models })
+      }
+
       if (req.method === 'POST' && p === '/config') {
         const body = await readBody(req)
         api.saveConfig(body || {})

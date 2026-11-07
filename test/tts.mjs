@@ -24,7 +24,10 @@ ok('保留标点', cleanForTTS('真的吗？好！').includes('？'))
 console.log('— 截断 —')
 eq('短句不动', clampText('你好'), '你好')
 ok('长句截断', clampText('啊'.repeat(200)).length <= MAX_CHARS + 1)
-ok('截断留省略号', clampText('句子。'.repeat(60)).endsWith('…'))
+// 注意：MAX_CHARS 现在是 3000（用户 2026-11-03 要求长文不截断），
+// 「句子。」×60 才 180 字，压根不会触发截断 —— 老用例是在 120 字时代写的。
+// 想测「截断后补省略号」必须真的超过上限。
+ok('截断留省略号', clampText('句子。'.repeat(MAX_CHARS)).endsWith('…'))
 ok('优先断在标点', clampText('一二三四五六七八九十。'.repeat(20)).includes('。'))
 
 console.log('— 缓存键 —')
