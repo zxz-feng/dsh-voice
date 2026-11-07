@@ -178,7 +178,13 @@ window.__ModuleLoader__.load({
             models.length ? h('select', {
               'data-voice-input': '', value: rvcModel,
               onChange: (e) => setRvcModel(e.target.value),
-            }, models.map((m) => h('option', { key: m, value: m }, m))) : h('input', {
+            }, models.map((m) => {
+              // 兼容两种返回：老格式是字符串数组，新格式是 {id,label,isDefault}
+              const id = typeof m === 'string' ? m : m.id
+              const label = typeof m === 'string' ? m : (m.label || m.id)
+              const def = typeof m === 'object' && m.isDefault
+              return h('option', { key: id, value: id }, def ? `${label}（默认）` : label)
+            })) : h('input', {
               'data-voice-input': '', value: rvcModel, placeholder: '服务没开，先手填模型名',
               onChange: (e) => setRvcModel(e.target.value),
             })),

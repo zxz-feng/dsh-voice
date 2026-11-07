@@ -141,7 +141,7 @@ export function apply(ctx, config = {}) {
       // 刷新设置页就能看见，不用改代码。
       if (req.method === 'GET' && p === '/models') {
         const q = url.searchParams.get('url') || api.effective().singUrl || ''
-        const models = await api.singModels(String(q))
+        const models = await api.singModelList(String(q))
         return sendJson(res, 200, { ok: true, models })
       }
 
