@@ -74,6 +74,8 @@ window.__ModuleLoader__.load({
       const [models, setModels] = useState([])
       const [rvcPitch, setRvcPitch] = useState('0')
       const [rvcIndex, setRvcIndex] = useState('0.5')
+      // 咬字参数「固定」开关，默认关（2026-11-08 主人要求：先可切换，不默认生效）
+      const [rvcForce, setRvcForce] = useState(false)
       const [probe, setProbe] = useState('')
       const [url, setUrl] = useState('')
       const [busy, setBusy] = useState(false)
@@ -87,6 +89,7 @@ window.__ModuleLoader__.load({
           setGsvUrl(s.gptsovits?.url || ''); setGsvRef(s.gptsovits?.ref || ''); setGsvPrompt(s.gptsovits?.prompt || '')
           setRvcUrl(s.rvc?.url || ''); setRvcModel(s.rvc?.model || '')
           setRvcPitch(String(s.rvc?.pitch ?? 0)); setRvcIndex(String(s.rvc?.indexRate ?? 0.5))
+          setRvcForce(!!s.rvc?.force)
           // 顺手问一下本地有哪些嗓子。服务没开就留空，输入框会退回手填。
           try {
             const j = await jget('/models?url=' + encodeURIComponent(s.rvc?.url || s.sing?.url || ''))
@@ -103,6 +106,7 @@ window.__ModuleLoader__.load({
             preset, maxChars: Number(maxChars), engine,
             gptsovitsUrl: gsvUrl, gptsovitsRef: gsvRef, gptsovitsPrompt: gsvPrompt,
             rvcUrl, rvcModel, rvcPitch: Number(rvcPitch), rvcIndexRate: Number(rvcIndex),
+            rvcForce: !!rvcForce,
           })
           setSt(s); setMsg({ kind: 'ok', text: '已保存 —— 下一句群消息就按新档走' })
         } catch (e) { setMsg({ kind: 'err', text: '保存失败：' + e.message }) }
@@ -193,7 +197,15 @@ window.__ModuleLoader__.load({
             onChange: (e) => setRvcPitch(e.target.value) })),
           h('div', { 'data-voice-field': '' }, h('label', {}, '检索强度'), h('input', {
             'data-voice-input': '', type: 'number', min: 0, max: 1, step: 0.05, value: rvcIndex,
-            onChange: (e) => setRvcIndex(e.target.value) }))),
+            onChange: (e) => setRvcIndex(e.target.value) })),
+          // 参数固定：默认关。开着时本地 /sing 会拿到 force=1，每段都用上面这套
+          // protect/index_rate，不再按每段音频自动调 —— 稳，但安静的歌可能咬字发糊。
+          h('div', { 'data-voice-field': '' }, h('label', {}, '咬字参数固定'), h('select', {
+            'data-voice-input': '', value: rvcForce ? '1' : '0',
+            onChange: (e) => setRvcForce(e.target.value === '1'),
+          },
+            h('option', { value: '0' }, '关（按每段音频自动调，默认）'),
+            h('option', { value: '1' }, '开（强制用上面这套参数）')))),
 
         h('div', { 'data-voice-card': '' },
           h('h4', {}, '试听'),
